@@ -6,7 +6,7 @@
 - Agents and admins can read, claim, and reply within their own workspaces. Agents can close or reopen a thread they hold or an unassigned thread, while admins can change any thread in their workspace. Closing preserves the assignment and does not block replies or reopen on inbound traffic. Offset pagination can shift when new messages arrive.
 - Inbox mutations store pending events in the same MongoDB document update. A background publisher appends to Redis Streams atomically with deduplication and sequence assignment. Sockets use one cursor for replay and live reads. A reset clears inbox data, rate limits and replay history while preserving active sessions and sequence counters. Records from before this release have no historical WebSocket events.
 - Redis Streams retain events and publication IDs until grader reset. Their durability across Redis crashes depends on Redis persistence. Polling and retention are sized for this assessment, with no automatic trimming. Pigeon can forget idempotency keys when it resets, and a provider send it already accepted may finish after an application reset.
-- The React shell shows sign-in, workspace memberships and sign-out. A complete inbox UI, billing, Elasticsearch and encrypted notes are outside this phase.
+- The React dashboard uses workspace-scoped HTTP reads for the inbox and message history. WebSocket events invalidate those reads, which keeps replay and live updates on the same data path without appending duplicate rows. Resume cursors and reply drafts are kept per workspace in memory for the current dashboard session. Contact and status filters cover the loaded inbox pages. Billing, Elasticsearch and encrypted notes remain outside scope.
 
 ## Phase 3 verification
 

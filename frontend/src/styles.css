@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --color-ink: #211b31;
+  --color-muted: #665f76;
+  --color-canvas: #f8f7fb;
+  --color-line: #e6e2ed;
+  --color-accent: #603bd1;
+  --color-accent-soft: #efeaff;
+}
+
+@layer base {
+  body { @apply m-0 bg-canvas font-sans text-ink antialiased; }
+  button, select, summary { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+  summary::-webkit-details-marker { display: none; }
+}
+
+@layer components {
+  .button {
+    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm leading-5 font-semibold;
+  }
+  .button:disabled { @apply opacity-50; }
+  .button-primary { @apply border border-accent bg-accent text-white shadow-sm; }
+  .button-primary:hover:not(:disabled) { @apply border-[#4e2bb5] bg-[#4e2bb5]; }
+  .button-secondary { @apply border border-line bg-white text-ink shadow-xs; }
+  .button-secondary:hover:not(:disabled), .icon-button:hover:not(:disabled) { @apply bg-accent-soft; }
+  .icon-button { @apply grid size-9 place-items-center rounded-lg text-muted; }
+  .field-label { @apply text-xs font-semibold tracking-[.04em] text-muted; }
+  .brand-mark {
+    @apply grid size-9 shrink-0 place-items-center rounded-[.7rem] bg-accent text-white;
+    background-image: linear-gradient(145deg, #8a60ec, #5c32c9 78%);
+    box-shadow: 0 4px 10px #5c32c928, inset 0 1px 1px #ffffff55;
+  }
+
+  .dashboard { @apply flex h-dvh min-h-0 overflow-hidden; }
+  .sidebar { @apply hidden w-[13.25rem] shrink-0 flex-col border-r border-line bg-[#fbfafe] lg:flex xl:w-[14.5rem]; }
+  .dashboard-content { @apply flex min-w-0 grow flex-col; }
+  .mobile-bar { @apply flex shrink-0 items-center gap-3 border-b border-line bg-white px-3 py-2 lg:hidden; }
+  .mobile-bar .brand-mark { @apply size-8; }
+  .nav-current { @apply flex w-full items-center gap-3 rounded-lg bg-accent-soft px-3 py-2.5 text-left text-sm font-semibold text-[#5130b1]; }
+  .inbox-grid { @apply flex min-h-0 grow lg:grid lg:grid-cols-[minmax(17rem,21rem)_minmax(0,1fr)] xl:grid-cols-[minmax(20rem,24rem)_minmax(0,1fr)]; }
+  .inbox-panel { @apply flex min-h-0 min-w-0 grow flex-col bg-white lg:border-r lg:border-line; }
+  .thread-panel { @apply flex min-h-0 min-w-0 grow flex-col; }
+  .thread-empty { @apply hidden min-h-0 place-items-center bg-canvas lg:grid; }
+  .thread-header { @apply flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line bg-white px-3 py-3 sm:px-6 lg:min-h-[5.25rem]; }
+  @media (width < 64rem) {
+    .mobile-hidden { display: none; }
+  }
+
+  .search-field { @apply flex min-h-10 items-center gap-2.5 rounded-lg border border-line bg-canvas px-3 text-muted focus-within:border-accent; }
+  .search-field input { @apply min-w-0 grow bg-transparent text-sm text-ink outline-none placeholder:text-muted; }
+  .search-field input:focus-visible { outline: none; }
+  .filter-button { @apply rounded-md px-3 py-1.5 text-sm font-medium text-muted; }
+  .filter-button:hover { @apply bg-canvas text-ink; }
+  .filter-active, .filter-active:hover { @apply bg-accent-soft font-semibold text-[#5130b1]; }
+  .conversation-row { @apply flex min-h-[4.15rem] w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2; }
+  .conversation-row:hover { @apply bg-canvas; }
+  .conversation-active, .conversation-active:hover { @apply border-[#dfd3fa] bg-[#f3efff]; }
+  .contact-avatar { @apply grid size-9 shrink-0 place-items-center rounded-xl bg-[#ebe4fe] text-[#6540ad]; }
+  .avatar-1 { @apply bg-[#deefed] text-[#21645c]; }
+  .avatar-2 { @apply bg-[#f8e7de] text-[#994b2b]; }
+  .avatar-3 { @apply bg-[#e4eafa] text-[#3a5595]; }
+  .state-badge, .connection-badge { @apply inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs leading-none font-semibold; }
+  .state-badge span { @apply size-1.5 rounded-full bg-current; }
+  .state-open, .connection-live { @apply bg-[#e6f5ed] text-[#276549]; }
+  .state-closed, .connection-badge:not(.connection-live) { @apply bg-[#eeebf3] text-[#595267]; }
+  .connection-badge { @apply px-2.5; }
+
+  .message-bubble { @apply rounded-2xl border px-3.5 py-2.5 text-[.935rem] leading-relaxed break-words whitespace-pre-wrap; overflow-wrap: anywhere; }
+  .message-in { @apply rounded-bl-sm border-line bg-white text-ink; }
+  .message-out { @apply rounded-br-sm border-[#e0d4fc] bg-[#eee7ff] text-[#302050]; }
+  .day-divider { @apply my-5 flex items-center gap-3 text-xs font-medium text-muted; }
+  .day-divider:first-child { @apply mt-1; }
+  .day-divider span { @apply h-px grow bg-line; }
+  .composer { @apply rounded-xl border border-line bg-white shadow-xs focus-within:border-accent; }
+  .composer textarea { @apply block max-h-36 min-h-16 w-full resize-y bg-transparent px-3.5 py-2.5 text-sm outline-none placeholder:text-muted; }
+  .composer textarea:focus-visible { outline: none; }
+
+  .login-art {
+    position: relative;
+    isolation: isolate;
+    background: radial-gradient(ellipse at 62% 40%, #7954e4 0%, #5431bd 53%, #3d2390 100%);
+  }
+  .login-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: .38;
+    background-image: radial-gradient(#ffffff60 1px, transparent 1px);
+    background-size: 19px 19px;
+    mask-image: linear-gradient(135deg, black, transparent 78%);
+  }
+  .login-orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: -1;
+    width: 50%;
+    aspect-ratio: 1;
+    border: 1px solid #eee4ff44;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .orbit-two { width: 72%; }
+  .orbit-three { width: 94%; }
+  .login-graphic { @apply relative h-48 w-52; }
+  .login-symbol, .login-signal {
+    @apply absolute grid place-items-center rounded-3xl text-white;
+    background: linear-gradient(135deg, #e9dcff87, #a981ff23);
+    border: 1px solid #f5edff75;
+    box-shadow: 0 22px 55px #2d157b5e, inset 0 1px 2px #ffffff60;
+    backdrop-filter: blur(9px);
+  }
+  .login-symbol { @apply top-1 left-1 size-36 -rotate-9; }
+  .login-signal { @apply right-0 bottom-0 size-24 rotate-12; }
+}

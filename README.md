@@ -4,18 +4,32 @@ Switchboard receives Pigeon messages, queues durable replies and provides an aut
 
 ## Start locally
 
-Install Node.js 22, then run:
+Install Node.js 22 and start Docker Desktop or Docker Engine. From the repository root, install dependencies and start the data stores and simulators:
 
 ```sh
 npm ci
 npm run up
+```
+
+In a second terminal, start the backend:
+
+```sh
 npm start
+```
+
+In a third terminal, start the React dashboard:
+
+```sh
 npm run dev:web
 ```
 
-Open http://localhost:5173 to sign in through the mock IdP and view your workspace memberships. If MongoDB and Redis are already running, `npm run mocks` starts the supplied simulators without Docker. `npm run doctor` checks the dependencies. The backend uses the defaults in `.env.example` without a local `.env`; configure overrides in the environment or a root `.env` file. `PORT` controls the backend listener and the Vite development proxy target.
+Open http://localhost:5173 and choose **Sign in to Switchboard**. Select any test account on the mock IdP. Eli Novak can switch between Acme and Globex. The inbox lists recent conversations, with open and closed filters and a contact filter for loaded rows. Select a conversation to view messages, claim it, reply, close it, or reopen it according to your role. On mobile, the menu contains workspace selection and sign-out.
 
-`npm run inbound` generates a sample message. `GET /healthz` checks MongoDB and Redis readiness. `npm run build:web` builds the sign-in shell. When serving the built frontend, proxy `/auth`, `/api`, and `/ws` to the backend, preserving WebSocket upgrades. Set `WEB_ORIGIN` and register the exact `OIDC_REDIRECT_URI` at the IdP. An HTTPS callback URI enables Secure cookies.
+Run `npm run inbound` from a separate terminal to generate a Pigeon message. Select the resulting conversation and send a reply to see its delivery status update. To check reconnect, take the browser offline, generate another incoming message, then restore the connection. The inbox refreshes automatically and resumes from the last sequence it processed for that workspace. Drafts stay in memory while the dashboard is open, including across workspace switches. If a send cannot be confirmed, **Retry send** reuses its original reference.
+
+If MongoDB and Redis already run locally, use `npm run mocks` in its own terminal in place of `npm run up`. Run `npm run doctor` to check the dependencies and `GET /healthz` to verify backend readiness. The backend starts without a local `.env` using the defaults in `.env.example`. Use a root `.env` file or environment variables to override them. `PORT` controls the backend listener and Vite's proxy target.
+
+`npm run build:web` outputs the production dashboard to `frontend/dist`. Serve that directory from the frontend origin and proxy `/auth`, `/api`, and `/ws` to the backend, preserving WebSocket upgrades. Set `WEB_ORIGIN` and register the exact `OIDC_REDIRECT_URI` with the IdP. An HTTPS callback URI enables Secure cookies.
 
 ## API and WebSocket
 
