@@ -1,5 +1,5 @@
 {
-  "install": "npm run scaffold:install",
-  "start": "npm --prefix scaffold/server start",
+  "install": "npm ci",
+  "start": "node backend/src/index.js",
   "health": "/healthz"
 }

@@ -1,0 +1,7 @@
+# Phase 1 decisions
+
+- MongoDB stores conversations and both message directions. Unique indexes scope contact identity, Pigeon event IDs, inbound message IDs and reply references by workspace and reset generation. The inbound history sorts by Pigeon's timestamp and then message ID. A single conditional update decides claims.
+- A reply is the pending delivery record. Admission stores it before returning 202. Workers recover expired leases from MongoDB after a restart and derive the provider idempotency key from the persisted message ID. A status webhook can confirm a send while its HTTP response is still outstanding. The first terminal status wins.
+- Redis coordinates per-workspace sends and holds the shared token bucket and Retry-After window. While holding both workspace send locks, reset advances the MongoDB generation and removes prior records and rate-limit keys. Requests that began before reset carry their original generation.
+- Pigeon can forget idempotency keys when it resets or restarts. If Pigeon already accepted a reply and loses that key before Switchboard receives confirmation, a retry can reach the carrier again. Reset can discard queued work and wait for an active send attempt. The provider can still deliver a send it already accepted.
+- The React/Vite workspace is a shell. Login, the customer-facing inbox UI, WebSocket updates, search, billing and encrypted notes are outside Phase 1.

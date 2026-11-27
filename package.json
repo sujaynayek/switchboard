@@ -1,5 +1,5 @@
 {
-  "name": "switchboard-starter",
+  "name": "switchboard",
   "private": true,
   "description": "Starter for the Switchboard build round. The harness is given; the product is yours.",
   "engines": {
@@ -18,9 +18,14 @@
     "inbound": "node harness/pigeon.js inbound",
     "quiet": "node harness/pigeon.js quiet",
     "drizzle": "node harness/pigeon.js drizzle",
-    "scaffold:install": "npm --prefix scaffold/server install && npm --prefix scaffold/web install",
-    "scaffold:server": "npm --prefix scaffold/server run dev",
-    "scaffold:web": "npm --prefix scaffold/web run dev",
-    "start:server": "npm --prefix scaffold/server start"
-  }
+    "start:server": "npm start",
+    "start": "node backend/src/index.js",
+    "dev:server": "npm run dev -w backend",
+    "dev:web": "npm run dev -w frontend",
+    "build:web": "npm run build -w frontend"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
 }
