@@ -1,6 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { config } from '../config/env.js';
 import { deleteInboxRecords, state } from '../models/inbox.js';
+import { advanceEventGeneration } from './event-stream.js';
 import { acquireSendLock, clearRateLimits } from './rate-limit.js';
 
 export async function resetInbox() {
@@ -22,7 +23,7 @@ export async function resetInbox() {
       { _id: 'inbox' }, { $inc: { generation: 1 } }, { returnDocument: 'after' },
     );
     const old = { generation: { $lt: generation } };
-    await Promise.all([deleteInboxRecords(old), clearRateLimits(workspaces)]);
+    await Promise.all([deleteInboxRecords(old), clearRateLimits(workspaces), advanceEventGeneration(generation)]);
   } finally {
     await Promise.all(locks.map((lock) => lock.release()));
   }

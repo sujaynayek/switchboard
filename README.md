@@ -1,17 +1,48 @@
-# Switchboard
+﻿# Switchboard
 
-Phase 1 implements Pigeon webhooks, durable replies, conversation claiming and the four grader endpoints.
+Switchboard receives Pigeon messages, queues durable replies and provides an authenticated, workspace-scoped inbox API with WebSocket replay.
 
-Install Node.js 22. From a clean clone, run:
+## Start locally
+
+Install Node.js 22, then run:
 
 ```sh
 npm ci
 npm run up
 npm start
+npm run dev:web
 ```
 
-If MongoDB and Redis are already running, `npm run mocks` starts the supplied simulators without Docker. `npm run doctor` checks the dependencies. The server uses the values in `.env.example` by default. Copy it to `.env` only to override local settings. Export variables in the shell to override the values the checker supplies.
+Open http://localhost:5173 to sign in through the mock IdP and view your workspace memberships. If MongoDB and Redis are already running, `npm run mocks` starts the supplied simulators without Docker. `npm run doctor` checks the dependencies. The backend uses the defaults in `.env.example` without a local `.env`; configure overrides in the environment or a root `.env` file. `PORT` controls the backend listener and the Vite development proxy target.
 
-With the server running, use `npm run inbound` to send a sample message. `GET /healthz` checks MongoDB and Redis readiness. To run the basic Level 1 checker, stop the application and run `npm run check`. The checker starts the application itself and clears its data. On Windows, the checker expects a POSIX shell on PATH and uses POSIX process-group signals for cleanup and crash testing.
+`npm run inbound` generates a sample message. `GET /healthz` checks MongoDB and Redis readiness. `npm run build:web` builds the sign-in shell. When serving the built frontend, proxy `/auth`, `/api`, and `/ws` to the backend, preserving WebSocket upgrades. Set `WEB_ORIGIN` and register the exact `OIDC_REDIRECT_URI` at the IdP. An HTTPS callback URI enables Secure cookies.
 
-`npm run dev:web` starts the React/Vite shell. `npm run build:web` builds it.
+## API and WebSocket
+
+| Method and path | Behavior |
+| --- | --- |
+| `GET /auth/login` | Starts OpenID Connect with PKCE. |
+| `GET /auth/callback` | Sets the session cookie and redirects to `WEB_ORIGIN`. |
+| `POST /auth/logout` | Revokes the shared session and clears the cookie. |
+| `GET /api/me` | Returns `{ sub, workspaces: [{ id, role }] }`. |
+| `GET /api/conversations` | Lists conversations, newest activity first. |
+| `GET /api/conversations/:contact` | Returns conversation details. |
+| `GET /api/conversations/:contact/messages` | Returns a page of messages, oldest first within the page. Offset zero selects the latest page. |
+| `POST /api/conversations/:contact/claim` | Claims for the signed-in user. Returns 409 if another agent holds the conversation. |
+| `POST /api/conversations/:contact/reply` | Accepts JSON `{ text, client_ref }`. Returns 202 when the reply is durable. A repeat of the same workspace reference reuses the original reply. |
+| `POST /api/conversations/:contact/close` and `…/reopen` | Change conversation state. Agents may act on unassigned conversations or their own. Workspace admins may act on any conversation in their workspace. |
+
+Conversation routes require `?workspace=<id>` and the session cookie. Encode the contact as a path segment. Paginated routes accept `limit` (1–100, default 25) and `offset` (default 0), and return `next_offset` when there is another page.
+
+Connect to `/ws?workspace=<id>` with the session cookie for new events. On reconnect, add `&after=<last processed seq>` to replay missed events and continue live. Keep the last processed sequence per workspace. Sessions and replay across backends require shared Redis 7 or newer. Configure Redis persistence and no eviction for session and event keys in deployments that must survive Redis restarts.
+
+## Verify
+
+Stop any manually running backend on ports 4000 and up before running the checker. It starts its own backends and resets application inbox data.
+
+```sh
+npm run check -- --levels 5
+npm run check -- --levels 1,5
+```
+
+On Windows, the checker expects a POSIX shell on PATH and uses POSIX process-group signals. It may leave its own backend children listening after it finishes.

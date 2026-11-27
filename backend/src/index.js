@@ -1,14 +1,20 @@
 import express from 'express';
 import { config } from './config/env.js';
 import { checkStores, mongo, redis } from './config/stores.js';
-import { initializeModels } from './models/inbox.js';
+import { currentGeneration, initializeModels } from './models/inbox.js';
+import { apiRouter } from './routes/api.js';
+import { authRouter } from './routes/auth.js';
 import { graderRouter } from './routes/grader.js';
 import { webhookRouter } from './routes/webhooks.js';
+import { advanceEventGeneration } from './services/event-stream.js';
+import { attachWebSockets } from './services/websocket.js';
 import { startDeliveryWorker } from './workers/delivery.js';
+import { startEventPublisher } from './workers/events.js';
 
 try {
   await Promise.all([mongo.connect(), redis.connect()]);
   await initializeModels();
+  await advanceEventGeneration(await currentGeneration());
 } catch (error) {
   console.error('Startup failed:', error.message);
   redis.disconnect();
@@ -30,6 +36,8 @@ app.get('/healthz', async (req, res) => {
 });
 app.use('/webhooks', webhookRouter);
 app.use('/__grader', graderRouter);
+app.use('/auth', authRouter);
+app.use('/api', apiRouter);
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
   if (error.status >= 400 && error.status < 500) return res.sendStatus(error.status);
@@ -37,14 +45,16 @@ app.use((error, req, res, next) => {
   res.sendStatus(503);
 });
 
-const worker = startDeliveryWorker(controller.signal);
+const workers = Promise.all([startDeliveryWorker(controller.signal), startEventPublisher(controller.signal)]);
 const server = app.listen(config.port, () => console.log('Switchboard listening on ' + server.address().port));
+const closeSockets = attachWebSockets(server);
 server.requestTimeout = 10000;
 
 function shutdown() {
   controller.abort();
+  closeSockets();
   server.close(async () => {
-    await worker;
+    await workers;
     redis.disconnect();
     await mongo.close();
   });

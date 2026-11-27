@@ -9,6 +9,13 @@ export const config = {
   port: Number(env.PORT ?? 4000),
   mongoUrl: env.MONGO_URL ?? 'mongodb://localhost:27017/switchboard',
   redisUrl: env.REDIS_URL ?? 'redis://localhost:6379',
+  webOrigin: new URL(env.WEB_ORIGIN ?? 'http://localhost:5173').origin,
+  oidc: {
+    issuer: env.OIDC_ISSUER ?? 'http://localhost:4020',
+    clientId: env.OIDC_CLIENT_ID ?? 'switchboard-web',
+    clientSecret: env.OIDC_CLIENT_SECRET ?? 'dev-secret-not-for-production',
+    redirectUri: env.OIDC_REDIRECT_URI ?? 'http://localhost:4000/auth/callback',
+  },
   graderToken: env.GRADER_TOKEN ?? 'grader-dev-token',
   pigeonUrl: env.PIGEON_URL ?? 'http://localhost:4010',
   webhookSecret: env.PIGEON_WEBHOOK_SECRET ?? 'whsec_pigeon_dev',

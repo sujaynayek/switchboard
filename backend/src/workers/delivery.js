@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { config } from '../config/env.js';
 import { currentGeneration, messages } from '../models/inbox.js';
+import { inboxEvent } from '../models/inbox-event.js';
 import { sendToPigeon } from '../services/pigeon.js';
 import { acquireSendLock, pauseWorkspace, takeToken } from '../services/rate-limit.js';
 
@@ -41,7 +42,13 @@ async function deliverNext(workspace, signal) {
       const update = { pending: false };
       if (result.providerId) Object.assign(update, { providerId: result.providerId, status: 'sent' });
       else update.status = 'failed';
-      await messages.updateOne(active, { $set: update, $unset: releaseLease });
+      await messages.updateOne(active, {
+        $set: update,
+        $unset: releaseLease,
+        $push: { outbox: inboxEvent('message.status', {
+          contact: message.contact, client_ref: message.clientRef, status: update.status,
+        }) },
+      });
     } else {
       if (result.retryAfter) await pauseWorkspace(workspace, result.retryAfter);
       const backoff = Math.min(4000, 500 * 2 ** (message.attempts - 1)) + Math.random() * 200;
