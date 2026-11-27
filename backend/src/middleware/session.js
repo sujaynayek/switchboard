@@ -8,8 +8,10 @@ export function acceptsOrigin(origin) {
 }
 
 export function requireSameOrigin(req, res, next) {
-  if (!acceptsOrigin(req.get('origin')) ||
-      (req.get('origin') === undefined && req.get('sec-fetch-site') === 'cross-site')) return res.sendStatus(403);
+  const origin = req.get('origin');
+  const site = req.get('sec-fetch-site');
+  if (!acceptsOrigin(origin) ||
+      (origin === undefined && (site === 'cross-site' || site === 'same-site'))) return res.sendStatus(403);
   next();
 }
 

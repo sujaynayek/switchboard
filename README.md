@@ -1,6 +1,12 @@
 ﻿# Switchboard
 
-Switchboard receives Pigeon messages, queues durable replies and provides an authenticated, workspace-scoped inbox API with WebSocket replay.
+Switchboard is a shared customer-support inbox. Agents sign in, switch between their workspaces, receive messages, claim conversations, and reply with live delivery status.
+
+## Architecture
+
+- **Frontend** uses React, Vite and Tailwind CSS. It reads the authenticated API and resumes WebSocket updates from the last received sequence for each workspace.
+- **Backend** uses Node.js 22 and Express. MongoDB stores the inbox, delivery leases and pending events. A worker sends replies to Pigeon using persisted idempotency keys.
+- **Redis** stores login state, sessions, shared rate limits and the ordered WebSocket event stream. The mock IdP handles OpenID Connect with PKCE.
 
 ## Start locally
 
@@ -28,6 +34,20 @@ Open http://localhost:5173 and choose **Sign in to Switchboard**. Select any tes
 Run `npm run inbound` from a separate terminal to generate a Pigeon message. Select the resulting conversation and send a reply to see its delivery status update. To check reconnect, take the browser offline, generate another incoming message, then restore the connection. The inbox refreshes automatically and resumes from the last sequence it processed for that workspace. Drafts stay in memory while the dashboard is open, including across workspace switches. If a send cannot be confirmed, **Retry send** reuses its original reference.
 
 If MongoDB and Redis already run locally, use `npm run mocks` in its own terminal in place of `npm run up`. Run `npm run doctor` to check the dependencies and `GET /healthz` to verify backend readiness. The backend starts without a local `.env` using the defaults in `.env.example`. Use a root `.env` file or environment variables to override them. `PORT` controls the backend listener and Vite's proxy target.
+
+## Configuration
+
+Shell values take precedence over the optional root `.env`, including values supplied by the checker.
+
+| Variables | Purpose |
+| --- | --- |
+| `PORT`, `WEB_ORIGIN` | Backend listener and frontend origin |
+| `MONGO_URL`, `REDIS_URL` | Shared database and Redis connections |
+| `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI` | IdP discovery, client registration and callback |
+| `PIGEON_URL`, `PIGEON_WEBHOOK_SECRET`, `PIGEON_KEY_WS_ACME`, `PIGEON_KEY_WS_GLOBEX` | Carrier endpoint, webhook verification and workspace API keys |
+| `GRADER_TOKEN` | Access to grader endpoints, including the destructive reset |
+
+The defaults are for the supplied simulators. Keep the mock IdP, simulator admin endpoints and grader routes off public ingress. Outside the local assessment, set private credentials.
 
 `npm run build:web` outputs the production dashboard to `frontend/dist`. Serve that directory from the frontend origin and proxy `/auth`, `/api`, and `/ws` to the backend, preserving WebSocket upgrades. Set `WEB_ORIGIN` and register the exact `OIDC_REDIRECT_URI` with the IdP. An HTTPS callback URI enables Secure cookies.
 
@@ -61,6 +81,6 @@ npm run check -- --levels 5
 npm run check:full
 ```
 
-The focused tests use a temporary MongoDB database and Redis logical database 15 by default. Run them with an isolated Redis database. Set `SWITCHBOARD_TEST_MONGO_URL` or `SWITCHBOARD_TEST_REDIS_URL` to target other test services. The suite covers signed webhook responses, duplicate and pending event publication, overlapping Retry-After windows, and a reply accepted by the carrier immediately before a worker dies.
+The focused tests use a temporary MongoDB database and Redis logical database 15 by default. Run them with an isolated Redis database. Set `SWITCHBOARD_TEST_MONGO_URL` or `SWITCHBOARD_TEST_REDIS_URL` to target other test services. The suite covers signed webhooks, crash recovery, grader contracts, OIDC validation and workspace access.
 
 Run the crash checks under Linux, including WSL or a Linux container on Windows, so the checker's POSIX process-group signals kill the backend processes. For container runs, stage the application and its dependencies on the Linux filesystem and keep Pigeon webhooks on the same network as the checker. The full checker writes `CHECK_REPORT.json` with its public scores. Level 4 uses a private checker.

@@ -11,8 +11,8 @@ export const cookieOptions = {
   path: '/',
 };
 
-export const randomToken = () => randomBytes(32).toString('base64url');
-export const digest = (value) => createHash('sha256').update(value).digest('base64url');
+const randomToken = () => randomBytes(32).toString('base64url');
+const digest = (value) => createHash('sha256').update(value).digest('base64url');
 export const validToken = (value) => typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value);
 export const loginCookie = (state) => 'switchboard_login_' + state;
 

@@ -3,6 +3,7 @@ import { config } from '../config/env.js';
 export async function sendToPigeon(message, signal) {
   const response = await fetch(new URL('/v1/messages', config.pigeonUrl), {
     method: 'POST',
+    redirect: 'error',
     headers: {
       'content-type': 'application/json',
       authorization: 'Bearer ' + config.pigeonKeys.get(message.workspace),
