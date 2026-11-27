@@ -41,8 +41,12 @@ Connect to `/ws?workspace=<id>` with the session cookie for new events. On recon
 Stop any manually running backend on ports 4000 and up before running the checker. It starts its own backends and resets application inbox data.
 
 ```sh
+npm run test:reliability
+npm run check -- --levels 2,3
 npm run check -- --levels 5
-npm run check -- --levels 1,5
+npm run check:full
 ```
 
-On Windows, the checker expects a POSIX shell on PATH and uses POSIX process-group signals. It may leave its own backend children listening after it finishes.
+The focused tests use a temporary MongoDB database and Redis logical database 15 by default. Run them with an isolated Redis database. Set `SWITCHBOARD_TEST_MONGO_URL` or `SWITCHBOARD_TEST_REDIS_URL` to target other test services. The suite covers signed webhook responses, duplicate and pending event publication, overlapping Retry-After windows, and a reply accepted by the carrier immediately before a worker dies.
+
+Run the crash checks under Linux, including WSL or a Linux container on Windows, so the checker's POSIX process-group signals kill the backend processes. For container runs, stage the application and its dependencies on the Linux filesystem and keep Pigeon webhooks on the same network as the checker. The full checker writes `CHECK_REPORT.json` with its public scores. Level 4 uses a private checker.

@@ -26,7 +26,10 @@ export function takeToken(workspace) {
 }
 
 export function pauseWorkspace(workspace, delay) {
-  return redis.set(cooldownKey(workspace), '1', 'PX', delay);
+  return redis.eval(
+    "if redis.call('PTTL', KEYS[1]) < tonumber(ARGV[1]) then return redis.call('SET', KEYS[1], '1', 'PX', ARGV[1]) end",
+    1, cooldownKey(workspace), delay,
+  );
 }
 
 export async function acquireSendLock(workspace, ttl = 8000) {

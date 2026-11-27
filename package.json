@@ -13,6 +13,7 @@
     "doctor": "node harness/doctor.js",
     "check": "node harness/check.js",
     "check:full": "node harness/check.js --full",
+    "test:reliability": "node --test backend/test/reliability.test.js",
     "chaos": "node harness/pigeon.js chaos",
     "report": "node harness/pigeon.js report",
     "inbound": "node harness/pigeon.js inbound",
